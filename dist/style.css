@@ -1548,3 +1548,34 @@ body.touch .menu-controls-touch {
     display: grid;
   }
 }
+
+/* -------------------------------------------------- Suorituskykymittarit (E) */
+
+#perf {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 50;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(10, 12, 14, 0.72);
+  color: #e8ecef;
+  pointer-events: none;
+}
+
+#perf[hidden] {
+  display: none;
+}
+
+#perf canvas {
+  display: block;
+  width: 300px;
+  height: 60px;
+  margin-bottom: 6px;
+}
+
+#perf pre {
+  margin: 0;
+  font: 11px/1.35 ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  white-space: pre;
+}

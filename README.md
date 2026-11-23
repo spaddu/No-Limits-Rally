@@ -236,14 +236,36 @@ Kaikki on proseduraalista (ei kuvia eikä ladattavia malleja).
 - **Kamera** (`js/camera.js`, `CAMERA_FX`): näkökenttä levenee vauhdissa (+11°
   huippunopeudessa) ja soralla kamera tärisee hienovaraisesti (maastossa enemmän).
 
+## Suorituskykymittarit (kehitykseen)
+
+**E** avaa ja sulkee mittarit oikeaan yläkulmaan (`js/perfHud.js`). Puhelimella ne saa
+näkyviin osoitteella `?perf` (esim. `http://192.168.1.10:3000/?perf`).
+
+- FPS, ruutuaika (keskiarvo ja pahin) ja ruutuaikakäyrä (vihreä < 17,5 ms, keltainen
+  < 33 ms, punainen hitaampi; viivat 60 ja 30 fps kohdalla)
+- CPU-aika osittain: päivitys (efektit, kamera, HUD), fysiikka (ja askelten määrä
+  ruudussa) sekä piirron valmistelu
+- GPU-aika, jos selain tukee ajastinkyselyitä (Chrome työpöydällä)
+- Piirtokutsut ja kolmiot: näkymä, varjokartta ja kaikki yhteensä (myös jälkikäsittely)
+- Muisti: geometriat, tekstuurit, shaderit ja JS-keko (Chrome)
+- Pölyhiukkaset, fysiikan kappaleet ja törmäysmuodot, tarkkuus ja pikselisuhde
+
+Mittarien ollessa auki voi kokeilla, mikä maksaa: **1** jälkikäsittely päälle/pois,
+**2** bloom, **3** varjot, **4** tarkkuus (pikselisuhde 0,5 → 2).
+
 ## Suorituskyky
 
 - Maasto on jaettu 32 m paloihin, joiden tarkkuus riippuu etäisyydestä tiehen
   (`LOD_LEVELS` heightmap.js:ssä): tien lähellä 1,6 m ruudut, kauempana 3,2 m ja
   6,4 m. Saumat liitetään toisiinsa, joten rakoja ei synny, ja auto ajaa samalla
   pinnalla kuin näkyy.
-- Maasto piirretään 64 m paloina ja puut, kivet ja muut toistuvat kappaleet 96 m
-  ruutuina, joten näkymän ulkopuolisia paloja ei piirretä lainkaan.
+- Maasto piirretään 64 m paloina ja puut, kivet ja muut toistuvat kappaleet 160 m
+  ruutuina (tienvarren ruohot 240 m), joten näkymän ulkopuolisia paloja ei piirretä.
+- Monesta palasta kootut staattiset kappaleet (talot, aidat, portit, sillat) ja auton
+  kori yhdistetään radan rakennuksen lopuksi materiaaleittain yhdeksi geometriaksi
+  160 m ruuduittain (`js/staticBatch.js`). Tämä puolitti piirtokutsut.
+- Jälkikäsittelyssä on vain kaksi koko ruudun vaihetta: bloom ja lopputulos (värisävy,
+  vinjetti ja ACES samassa shaderissa).
 - Maasto ei heitä varjoja (vain autot, puut ja rakennukset), näkymä päättyy sumun
   loppuun ja tarkkuus on enintään 1,5 × näytön pikseleistä (`main.js`).
 
@@ -312,6 +334,8 @@ Paina pelissä **M** nähdäksesi kartan, jossa pisteiden numerot näkyvät.
 - `js/themes.js`: ratojen teemat (tunnelma, värit, tienvarsi, maisema)
 - `js/atmosphere.js`: tunnelma-asetukset, taivaskupu ja pilvet, hehkuva utu
 - `js/postfx.js`: jälkikäsittely (bloom, värisävy, vinjetti, ACES)
+- `js/perfHud.js`: suorituskykymittarit (E-näppäin tai `?perf`)
+- `js/staticBatch.js`: staattisten kappaleiden yhdistäminen (vähemmän piirtokutsuja)
 - `js/roadside.js`: tien reunan ruohotupsut, kanerva ja pikkukivet
 - `js/scenery.js`: metsäteeman puut ja kivet
 - `js/sceneryFinland.js`: hakkuuaukeat, pellot, paalit ja punaiset talot

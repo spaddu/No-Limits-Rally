@@ -16,6 +16,7 @@ import { DustSystem } from './dust.js';
 import { Stage } from './stage.js';
 import { resolveAtmosphere, fogDensity, Sky, applyFogGlow } from './atmosphere.js';
 import { buildRoadside } from './roadside.js';
+import { mergeStatic } from './staticBatch.js';
 
 export const STEP = 1 / 60;
 const DROWN_DEPTH = 0.55;   // m: tätä syvemmässä vedessä auto hyytyy
@@ -120,12 +121,15 @@ export class RaceSession {
     this.drowned = false;
     this.baseDamping = [this.car.body.linearDamping(), this.car.body.angularDamping()];
     this.dust = new DustSystem(scene, theme.dust);
+    // Rakennusten, aitojen ym. palaset yhdistetään: murto-osa piirtokutsuista (staticBatch.js)
+    const merged = mergeStatic(scene, { exclude: [this.car.group, this.mapView.group, this.sky.mesh] });
     applyFogGlow(scene);   // utu hehkuu auringon suunnassa kuten taivas
 
     this.accumulator = 0;
+    this.perf = { physics: 0, steps: 0 };
     this.orbitAngle = 0;
     this.driven = false;   // onko tällä sessiolla jo ajettu (valikon "Jatka"-nappia varten)
-    console.info(`${track.name} + ${carDef.name}: rakennettu ${Math.round(performance.now() - buildStart)} ms, tie ${Math.round(road.length)} m`);
+    console.info(`${track.name} + ${carDef.name}: rakennettu ${Math.round(performance.now() - buildStart)} ms, tie ${Math.round(road.length)} m, meshit ${merged.before} → ${merged.after}`);
   }
 
   /** Siirtää auton tien näytepisteeseen s, ajosuuntaan (tai vastakkaiseen, jos reverse). */
@@ -237,10 +241,15 @@ export class RaceSession {
     if (input.consumeRestart()) this.restart();
 
     this.accumulator += dt;
+    const physicsStart = performance.now();
+    let steps = 0;
     while (this.accumulator >= STEP) {
       this.stepPhysics(input.state);
       this.accumulator -= STEP;
+      steps++;
     }
+    this.perf.physics = performance.now() - physicsStart;   // suorituskykymittareille
+    this.perf.steps = steps;
     const car = this.car;
     car.syncVisual(this.accumulator / STEP);
     this.dust.emit(car, dt);

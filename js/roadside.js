@@ -1,6 +1,7 @@
 // Tien reunan pikkuyksityiskohdat: ruohotupsut, saniaiset, kanerva, kuiva heinä ja pikkukivet
 // ojanpenkoilla. Pelkkää grafiikkaa (ei törmäyksiä), muutama kolmio per kappale, ja kaikki
-// samanlaiset piirretään yhtenä InstancedMesh-joukkona (sceneryKit.InstanceBatch).
+// samanlaiset piirretään yhtenä InstancedMesh-joukkona (sceneryKit.InstanceBatch, 240 m ruudut,
+// ei varjoja: pienet kappaleet maksaisivat varjokartassa paljon piirtokutsuja).
 //
 // Teema antaa tyypit ja värit (themes.js: roadside):
 //   roadside: {
@@ -79,7 +80,8 @@ export function buildRoadside(scene, terrain, road, style, seed = 7, sea = null)
       color: '#ffffff', flatShading: true, roughness: 1,
       side: plant && item.type !== 'shrub' ? THREE.DoubleSide : THREE.FrontSide,
     });
-    const batch = new InstanceBatch(geo, material);
+    // Pienet kappaleet: ei varjoja (näkyisivät tuskin) ja isot ruudut, jotta piirtokutsuja on vähän
+    const batch = new InstanceBatch(geo, material, { castShadow: false, cell: 240 });
     const colors = item.colors.map((c) => new THREE.Color(c));
     const [s0, s1] = item.size ?? [0.4, 0.8];
     const [b0, b1] = item.band ?? [0.2, 4];

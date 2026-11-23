@@ -16,7 +16,7 @@ export function flatMaterial(color, extra = {}) {
 }
 
 /** Instanssipalan koko (m): kappaleet ryhmitellään tämän kokoisiin ruutuihin. */
-export const INSTANCE_CELL = 96;
+export const INSTANCE_CELL = 160;
 
 /**
  * Kokoaa monta samanlaista kappaletta InstancedMesh-olioiksi.
@@ -25,13 +25,14 @@ export const INSTANCE_CELL = 96;
  * näkymän (ja varjokartan) ulkopuoliset ruudut jätetään piirtämättä.
  */
 export class InstanceBatch {
-  constructor(geometry, material, { castShadow = true, receiveShadow = true } = {}) {
+  constructor(geometry, material, { castShadow = true, receiveShadow = true, cell = INSTANCE_CELL } = {}) {
     this.geometry = geometry;
     this.material = material;
     this.matrices = [];
     this.colors = [];
     this.castShadow = castShadow;
     this.receiveShadow = receiveShadow;
+    this.cell = cell;   // isompi ruutu = vähemmän piirtokutsuja, mutta huonompi rajaus
   }
 
   add(matrix, color = null) {
@@ -45,7 +46,7 @@ export class InstanceBatch {
     const cells = new Map();
     for (let i = 0; i < n; i++) {
       const e = this.matrices[i].elements;
-      const key = `${Math.floor(e[12] / INSTANCE_CELL)},${Math.floor(e[14] / INSTANCE_CELL)}`;
+      const key = `${Math.floor(e[12] / this.cell)},${Math.floor(e[14] / this.cell)}`;
       if (!cells.has(key)) cells.set(key, []);
       cells.get(key).push(i);
     }

@@ -4,6 +4,7 @@
 // Auton paikallinen koordinaatisto: +X eteenpäin, +Y ylös, +Z oikealle.
 
 import * as THREE from 'three';
+import { mergeStatic } from './staticBatch.js';
 import { buildHatchBody, addHatchRim } from './modelHatch.js';
 import { buildRetroBody, addRetroRim } from './modelRetro.js';
 import { buildWrcBody, addWrcRim } from './modelWrc.js';
@@ -111,6 +112,8 @@ export class Car {
 
     // --- Grafiikka ----------------------------------------------------------
     this.group = this.buildModel();
+    // Korin palaset yhdeksi geometriaksi materiaaleittain (renkaat pyörivät, ne jätetään erikseen)
+    mergeStatic(this.group, { exclude: this.wheels.map((w) => w.pivot) });
     scene.add(this.group);
 
     // Interpolointia varten (fysiikka 60 Hz, ruudunpäivitys voi olla eri)

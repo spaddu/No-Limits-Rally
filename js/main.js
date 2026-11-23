@@ -8,6 +8,7 @@ import { RaceSession } from './session.js';
 import { TRACKS } from './tracks.js';
 import { CARS } from './cars.js';
 import { PostFX } from './postfx.js';
+import { PerfHud } from './perfHud.js';
 
 const speedEl = document.getElementById('speed-value');
 
@@ -76,6 +77,7 @@ renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;   // valotus radan tunnelman mukaan (atmosphere.js)
 document.body.appendChild(renderer.domElement);
 const postfx = new PostFX(renderer);                   // bloom ja vinjetti (postfx.js), ?fx=0 = pois
+const perf = new PerfHud(renderer, postfx);            // suorituskykymittarit: E-näppäin tai ?perf
 
 const input = new Input();
 const touch = new TouchControls(input);   // kosketusohjaimet puhelimille (näkyvät vain kosketuslaitteilla)
@@ -160,8 +162,12 @@ renderer.setAnimationLoop((now) => {
   const dt = Math.min((now - last) / 1000, 0.1);
   last = now;
   if (!session) return;
+  perf.begin();
   if (input.consumeSound()) updateSoundButton(audio.toggleMuted());
 
+  const updateStart = performance.now();
+  session.perf.physics = 0;
+  session.perf.steps = 0;
   if (menu.isOpen) {
     input.clearEvents();
     session.idle(dt);
@@ -174,7 +180,15 @@ renderer.setAnimationLoop((now) => {
   }
 
   speedEl.textContent = Math.round(Math.abs(session.car.speed) * 3.6);
+  const renderStart = performance.now();
   session.render(postfx, dt);
+  const renderEnd = performance.now();
+  perf.end(session, {
+    update: renderStart - updateStart - session.perf.physics,
+    physics: session.perf.physics,
+    steps: session.perf.steps,
+    render: renderEnd - renderStart,
+  });
 });
 
 addEventListener('resize', () => {
@@ -185,7 +199,7 @@ addEventListener('resize', () => {
 
 // Kehitystä ja testausta varten selaimen konsolista: window.game
 window.game = {
-  THREE, RAPIER, renderer, postfx, input, menu, touch, audio,
+  THREE, RAPIER, renderer, postfx, perf, input, menu, touch, audio,
   get session() { return session; },
   get car() { return session.car; },
   get road() { return session.road; },
