@@ -1,0 +1,22 @@
+{
+  "name": "ai-autopeli",
+  "version": "1.0.0",
+  "description": "Pieni 3D-rallipeli: valitse rata ja auto valikosta ja aja pätkä mäkien ja metsien keskellä mahdollisimman nopeasti.",
+  "license": "ISC",
+  "author": "",
+  "private": true,
+  "scripts": {
+    "dev": "serve .",
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "preview": "serve dist"
+  },
+  "dependencies": {
+    "three": "0.184.0",
+    "@dimforge/rapier3d-compat": "0.19.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "serve": "^14.2.4"
+  }
+}

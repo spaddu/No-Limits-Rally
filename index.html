@@ -17,6 +17,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,600;1,800;1,900&display=swap">
   <link rel="stylesheet" href="style.css?v=12">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js",
+      "@dimforge/rapier3d-compat": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.19.3/rapier.mjs"
+    }
+  }
+  </script>
   <script defer src="https://api.pirsch.io/pa.js" id="pianjs" data-code="a5tvSYWsEBT5IuAxldnS6bkvKj5vmB0V"></script>
 </head>
 <body>
@@ -106,7 +114,6 @@
     </div>
   </div>
 
-  <script type="module" src="main.min.js"></script>
-  <script>if (location.hostname === 'localhost') new EventSource('/esbuild').addEventListener('change', () => location.reload());</script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
