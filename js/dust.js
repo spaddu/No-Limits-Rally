@@ -14,7 +14,9 @@ export const DUST_CONFIG = {
   spinSpeed: 14,        // m/s, jonka yli kiihdytys ei enää revi
   lock: 2.5,            // × nopeus, kun rengas jarruttaa lukkoon (jarru, käsijarru)
   debris: 0.45,         // roiskeiden osuus revityksen/luisun/jarrutuksen määrästä
-  opacity: 0.45,
+  opacity: 0.5,         // pölyn peittävyys alussa (haalistuu pehmeästi loppua kohti)
+  dustSize: [0.32, 0.55], // pölypilven alkukoko (m)
+  dustGrow: 2.8,        // kuinka moninkertaiseksi pilvi laajenee elinaikanaan
   maxDust: 700,
   maxDebris: 300,
 };
@@ -46,6 +48,20 @@ class ParticlePool {
     this.rot = new Float32Array(max * 3);
     this.col = new Float32Array(max * 3);
 
+    // Pölylle oma läpinäkyvyys per hiukkanen (pehmeä haalistuminen)
+    if (behaviour.fade) {
+      this.alpha = new Float32Array(max);
+      this.alphaAttr = new THREE.InstancedBufferAttribute(this.alpha, 1);
+      this.alphaAttr.setUsage(THREE.DynamicDrawUsage);
+      geometry.setAttribute('aAlpha', this.alphaAttr);
+      material.onBeforeCompile = (shader) => {
+        shader.vertexShader = 'attribute float aAlpha;\nvarying float vAlpha;\n' + shader.vertexShader
+          .replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvAlpha = aAlpha;');
+        shader.fragmentShader = 'varying float vAlpha;\n' + shader.fragmentShader
+          .replace('#include <color_fragment>', '#include <color_fragment>\n\tdiffuseColor.a *= vAlpha;');
+      };
+      material.customProgramCacheKey = () => 'dust-alpha';
+    }
     this.mesh = new THREE.InstancedMesh(geometry, material, max);
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.mesh.setColorAt(0, new THREE.Color());
@@ -83,7 +99,7 @@ class ParticlePool {
   }
 
   update(dt, cameraPos, m, q, e, p, s) {
-    const { drag, gravity, grow } = this.behaviour;
+    const { drag, gravity, grow, fade } = this.behaviour;
     const damp = Math.exp(-drag * dt);
     const matrix = this.mesh.instanceMatrix.array;
     const colors = this.mesh.instanceColor.array;
@@ -104,10 +120,11 @@ class ParticlePool {
       this.pos[i3 + 2] += this.vel[i3 + 2] * dt;
 
       const t = this.age[i] / this.life[i];
-      // Pöly kasvaa ja haihtuu, roiske vain pienenee
+      // Pöly laajenee nopeasti ja haalistuu pehmeästi, roiske vain pienenee
       let scale = grow
-        ? this.size[i] * (0.45 + 1.6 * Math.sqrt(t)) * Math.pow(1 - t, 1.3)
+        ? this.size[i] * (0.6 + (DUST_CONFIG.dustGrow - 0.6) * (1 - Math.pow(1 - t, 2.2)))
         : this.size[i] * (1 - t * t);
+      if (fade) this.alpha[i] = Math.min(1, t * 14) * Math.pow(1 - t, 1.7);
 
       // Kameran lähellä pienennetään, ettei pilvi peitä näkymää
       p.set(this.pos[i3], this.pos[i3 + 1], this.pos[i3 + 2]);
@@ -126,6 +143,7 @@ class ParticlePool {
     }
 
     this.mesh.count = this.count;
+    if (this.alphaAttr) this.alphaAttr.needsUpdate = true;
     this.mesh.instanceMatrix.needsUpdate = true;
     this.mesh.instanceColor.needsUpdate = true;
   }
@@ -148,7 +166,7 @@ export class DustSystem {
         transparent: true, opacity: C.opacity, depthWrite: false,
       }),
       C.maxDust,
-      { drag: 2.2, gravity: 0.35, grow: true },
+      { drag: 2.6, gravity: 0.3, grow: true, fade: true },
     );
     this.debris = new ParticlePool(
       scene,
@@ -235,7 +253,7 @@ export class DustSystem {
           rnd(0.5, 1.5) + intensity,
           vz * 0.25 + wf.z * kick * 0.5 + wr.z * side + rnd(-0.6, 0.6),
           rnd(1.0, 1.8) + intensity * 0.8,
-          rnd(0.5, 0.8) + intensity * 0.7,
+          rnd(C.dustSize[0], C.dustSize[1]) + intensity * 0.5,
           pick(onRoad ? this.colors.road : this.colors.offroad),
         );
       }

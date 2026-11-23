@@ -7,6 +7,7 @@ import { GameAudio } from './audio.js';
 import { RaceSession } from './session.js';
 import { TRACKS } from './tracks.js';
 import { CARS } from './cars.js';
+import { PostFX } from './postfx.js';
 
 const speedEl = document.getElementById('speed-value');
 
@@ -72,7 +73,9 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));   // tarkat näytöt: e
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;   // valotus radan tunnelman mukaan (atmosphere.js)
 document.body.appendChild(renderer.domElement);
+const postfx = new PostFX(renderer);                   // bloom ja vinjetti (postfx.js), ?fx=0 = pois
 
 const input = new Input();
 const touch = new TouchControls(input);   // kosketusohjaimet puhelimille (näkyvät vain kosketuslaitteilla)
@@ -87,6 +90,7 @@ function buildSession(trackIdx, carIdx) {
   session.choice = { track: trackIdx, car: carIdx };
   session.onImpact = (strength, material) => audio.impact(strength, material);
   audio.setCar(CARS[carIdx], TRACKS[trackIdx].theme);
+  postfx.configure(session.atmo);
 }
 
 const menu = new Menu({
@@ -170,17 +174,18 @@ renderer.setAnimationLoop((now) => {
   }
 
   speedEl.textContent = Math.round(Math.abs(session.car.speed) * 3.6);
-  session.render(renderer);
+  session.render(postfx, dt);
 });
 
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
+  postfx.setSize(innerWidth, innerHeight);
   session?.resize();
 });
 
 // Kehitystä ja testausta varten selaimen konsolista: window.game
 window.game = {
-  THREE, RAPIER, renderer, input, menu, touch, audio,
+  THREE, RAPIER, renderer, postfx, input, menu, touch, audio,
   get session() { return session; },
   get car() { return session.car; },
   get road() { return session.road; },

@@ -14,6 +14,8 @@ import { ChaseCamera } from './camera.js';
 import { MapView } from './mapView.js';
 import { DustSystem } from './dust.js';
 import { Stage } from './stage.js';
+import { resolveAtmosphere, fogDensity, Sky, applyFogGlow } from './atmosphere.js';
+import { buildRoadside } from './roadside.js';
 
 export const STEP = 1 / 60;
 const DROWN_DEPTH = 0.55;   // m: tätä syvemmässä vedessä auto hyytyy
@@ -26,7 +28,7 @@ function createWater(scene, size, sea) {
     const mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(size * 3, size * 3).rotateX(-Math.PI / 2),
       new THREE.MeshStandardMaterial({
-        color, roughness: 0.2, metalness: 0.05, flatShading: true,
+        color, roughness: 0.3, metalness: 0.05, flatShading: true,
         transparent: opacity < 1, opacity, depthWrite: opacity >= 1,
       }),
     );
@@ -37,7 +39,7 @@ function createWater(scene, size, sea) {
   make(sea.level - 30, sea.deep, 1);
   return make(sea.level, sea.color, sea.opacity ?? 0.72);
 }
-const SUN_OFFSET = new THREE.Vector3(45, 80, 30);
+const SUN_DISTANCE = 160;   // m: varjokameran etäisyys autosta auringon suuntaan
 
 export class RaceSession {
   constructor(RAPIER, track, carDef) {
@@ -49,25 +51,30 @@ export class RaceSession {
     const theme = THEMES[track.theme ?? 'forest'];
     this.theme = theme;
     const scene = new THREE.Scene();
-    // Rata voi muuttaa teeman taivasta ja sumua (track.env), esim. pyramidit näkyviin kauas
-    const sky = new THREE.Color(track.env?.sky ?? theme.sky);
-    const fog = track.env?.fog ?? theme.fog;
-    scene.background = sky;
-    scene.fog = new THREE.Fog(sky, fog[0], fog[1]);
-    scene.add(new THREE.HemisphereLight(...theme.hemi));
-    const sun = new THREE.DirectionalLight(theme.sun[0], theme.sun[1]);
+    // Tunnelma (atmosphere.js): taivas, aurinko, täyttövalo ja utu. Rata voi muuttaa
+    // arvoja (track.env), esim. pyramidit näkyviin kauas.
+    const atmo = resolveAtmosphere(theme.atmosphere, track);
+    this.atmo = atmo;
+    const visibility = atmo.fog.visibility;
+    const horizon = new THREE.Color(atmo.sky.horizon);
+    scene.background = horizon;
+    scene.fog = new THREE.FogExp2(horizon, fogDensity(visibility));   // sama väri kuin taivaan horisontti
+    scene.add(new THREE.HemisphereLight(atmo.hemi.sky, atmo.hemi.ground, atmo.hemi.intensity));
+    const sun = new THREE.DirectionalLight(atmo.sun.color, atmo.sun.intensity);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
     const sc = sun.shadow.camera;
     sc.left = -45; sc.right = 45; sc.top = 45; sc.bottom = -45;
-    sc.near = 10; sc.far = 220;
+    sc.near = 10; sc.far = SUN_DISTANCE + 160;   // matala aurinko: pitkät varjot
     sun.shadow.bias = -0.0005;
     sun.shadow.normalBias = 0.04;
     scene.add(sun, sun.target);
     this.scene = scene;
     this.sun = sun;
-    // Sumun takana ei näy mitään, joten näkymä rajataan sumun loppuun (taivas on sumun värinen)
-    this.camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, fog[1] + 60);
+    // Udun takana ei näy mitään, joten näkymä rajataan sinne (utu ~99 %)
+    this.camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, visibility * 1.25);
+    this.sky = new Sky(scene, atmo, visibility * 1.15);
+    this.sunDir = this.sky.sunDir;
 
     // --- Fysiikka ja maailma -----------------------------------------------------
     const world = new RAPIER.World({ x: 0, y: -14, z: 0 }); // hieman maata vahvempi painovoima = napakampi arcade-tuntuma
@@ -93,6 +100,9 @@ export class RaceSession {
     this.terrain = createTerrain(scene, world, RAPIER, field, road, theme.terrainColor(layout));
     createRoadMesh(scene, road, theme.road, layout?.roadAlt ?? null);
     theme.build({ scene, world, RAPIER, terrain: this.terrain, road, layout, rand, options, track });
+    // Tien reunan ruohotupsut ja pikkukivet (roadside.js); oma siemen, ettei muu maisema muutu
+    this.sea = track.env?.sea ?? theme.sea ?? null;   // rata voi tuoda oman vetensä (esim. järvi)
+    buildRoadside(scene, this.terrain, road, theme.roadside, (options.seed ?? 99) + 1000, this.sea);
     this.stage = new Stage(scene, world, RAPIER, road, carDef.id);
 
     // --- Auto ------------------------------------------------------------------------
@@ -106,11 +116,11 @@ export class RaceSession {
     this.chase.snap(this.car.position, this.car.forward);
     this.mapView = new MapView(scene, this.terrain, road, this.stage);
     // Meri ja auton hyytyminen veteen
-    this.sea = track.env?.sea ?? theme.sea ?? null;   // rata voi tuoda oman vetensä (esim. järvi)
     if (this.sea) this.water = createWater(scene, grid.size, this.sea);
     this.drowned = false;
     this.baseDamping = [this.car.body.linearDamping(), this.car.body.angularDamping()];
     this.dust = new DustSystem(scene, theme.dust);
+    applyFogGlow(scene);   // utu hehkuu auringon suunnassa kuten taivas
 
     this.accumulator = 0;
     this.orbitAngle = 0;
@@ -242,10 +252,25 @@ export class RaceSession {
       }
     }
     this.dust.update(dt, this.camera.position);
-    this.chase.update(dt, car.position, car.forward);
+    this.chase.update(dt, car.position, car.forward, this.cameraMotion(car));
     this.mapView.update(car);
     this.stage.updateHud();
     this.followSun();
+  }
+
+  /** Kameran elävöitys: vauhti (näkökenttä) ja alustan karheus (tärinä soralla ja maastossa). */
+  cameraMotion(car) {
+    let contact = 0, offroad = 0;
+    for (let i = 0; i < 4; i++) {
+      if (!car.vehicle.wheelIsInContact(i)) continue;
+      contact++;
+      if (!car.wheelOnRoad[i]) offroad++;
+    }
+    return {
+      speed: Math.abs(car.speed),
+      maxSpeed: car.config.maxSpeed,
+      rough: contact ? (contact / 4) * (1 + 0.8 * (offroad / contact)) : 0,
+    };
   }
 
   /** Valikkotila: fysiikka tauolla, kamera kiertää hitaasti auton ympäri. */
@@ -257,17 +282,22 @@ export class RaceSession {
     const ground = this.terrain.heightAt(this.camera.position.x, this.camera.position.z) + 1.5;
     if (this.camera.position.y < ground) this.camera.position.y = ground;
     this.camera.lookAt(p.x, p.y + 0.6, p.z);
+    this.chase.resetFov();
     this.dust.update(dt, this.camera.position);
     this.followSun();
   }
 
   followSun() {
-    this.sun.position.copy(this.car.position).add(SUN_OFFSET);
+    this.sun.position.copy(this.car.position).addScaledVector(this.sunDir, SUN_DISTANCE);
     this.sun.target.position.copy(this.car.position);
   }
 
-  render(renderer) {
-    renderer.render(this.scene, this.mapView.active ? this.mapView.camera : this.camera);
+  /** Piirtää näkymän jälkikäsittelyn kautta (postfx.js). */
+  render(postfx, dt) {
+    const map = this.mapView.active;
+    this.sky.mesh.visible = !map;
+    if (!map) this.sky.update(dt, this.camera);
+    postfx.render(this.scene, map ? this.mapView.camera : this.camera, dt);
   }
 
   resize() {

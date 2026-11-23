@@ -196,8 +196,45 @@ V8-diesel: iso turbo, dieselin nakutus, moottorijarrun rätinä kaasun noustessa
 paineilmajarrujen sihahdus pysähtyessä (`sound`: `diesel`, `jake`, `airBrake`,
 `turboPitch`, `inertia`).
 
-Teemat (`js/themes.js`) määräävät taivaan, valaistuksen, maaston värit, tien
-pinnan, pölyn värit ja maisemaelementit.
+Teemat (`js/themes.js`) määräävät tunnelman (`atmosphere`), maaston värit, tien
+pinnan, pölyn värit, tienvarren pikkuyksityiskohdat (`roadside`) ja maisemaelementit.
+
+## Tunnelma ja grafiikka
+
+Kaikki on proseduraalista (ei kuvia eikä ladattavia malleja).
+
+- **Tunnelma-asetukset** (`js/atmosphere.js`, `ATMOSPHERES`): yksi selkeä asetusolio
+  per tunnelma, ja teema valitsee omansa (`atmosphere: 'finnishEvening'` themes.js:ssä):
+  - `finnishEvening` (Suomi): kesäilta, matala lämmin aurinko, vaaleanpunertava horisontti
+  - `tuscanGoldenHour` (Italia): golden hour, kultainen valo ja lämmin utu
+  - `desertHaze` (Egypti): kuuma iltapäivä, vaalea pölyinen utu
+  - `arizonaAfternoon` (Arizona): myöhäinen iltapäivä, syvänsininen taivas ja kumpupilvet
+  - `bahamasNoon` (Bahama): kirkas keskipäivä, korkea aurinko, lähes pilvetöntä
+  - `highlandOvercast` (Skotlanti): pilvinen ja usvainen, hajavalo ja pehmeät varjot
+
+  Jokaisessa: aurinko (väri, voimakkuus, korkeus ja suunta → varjojen pituus),
+  täyttövalo (`HemisphereLight`: taivas- ja maaväri), taivaan liukuväri (lakipiste →
+  horisontti), auringon hehku, pilvet (peittävyys, pehmeys, värit, tuuli), utu
+  (näkyvyys metreinä), ACES-valotus, bloom, vinjetti ja värisävy. Rata voi muuttaa
+  yksittäisiä arvoja: `env.atmosphere = { sun: { elevation: 10 } }` tracks.js:ssä
+  (vanhat `env.sky` = horisontin väri ja `env.fog` = näkyvyys toimivat edelleen).
+- **Taivas**: iso taivaskupu (`SphereGeometry`, `BackSide`) omalla shaderilla:
+  liukuväri, auringon kiekko ja hehku sekä fBm-kohinasta lasketut, hitaasti liikkuvat
+  pilvet.
+- **Utu**: `FogExp2`, jonka väri on täsmälleen taivaan horisonttiväri. Three.js:n
+  sumupalaa on laajennettu niin, että utu saa auringon suunnassa saman hehkun kuin
+  taivas, joten kaukaiset vuoret sulautuvat taivaaseen saumatta (`applyFogGlow`).
+- **Jälkikäsittely** (`js/postfx.js`): MSAA-puskuri → `UnrealBloomPass` (korkea kynnys:
+  vain aurinko ja takavalot hehkuvat) → värisävy ja vinjetti → ACES-sävytys
+  (`OutputPass`). Osoitteella `?fx=0` jälkikäsittely on pois (vertailuun tai heikoille
+  laitteille). Puhelimilla bloom lasketaan pienemmällä tarkkuudella.
+- **Tienvarsi** (`js/roadside.js`): ruohotupsut, saniaiset, kanerva, kuiva heinä,
+  pensaat ja pikkukivet ojanpenkoilla, `InstancedMesh`-joukkoina (muutama kolmio per
+  kappale). Tyypit, määrät ja värit teemoittain (`roadside` themes.js:ssä).
+- **Pöly** (`js/dust.js`): pienempi alkukoko, laajenee nopeasti ja haalistuu
+  pehmeästi (oma läpinäkyvyys per hiukkanen); värit tienpinnan mukaan teemoittain.
+- **Kamera** (`js/camera.js`, `CAMERA_FX`): näkökenttä levenee vauhdissa (+11°
+  huippunopeudessa) ja soralla kamera tärisee hienovaraisesti (maastossa enemmän).
 
 ## Suorituskyky
 
@@ -272,7 +309,10 @@ Paina pelissä **M** nähdäksesi kartan, jossa pisteiden numerot näkyvät.
 - `js/heightmap.js`: luonnollinen maasto ja tien muotoilu maastoon, etäisyyskenttä
 - `js/terrain.js`: maaston grafiikka ja törmäysmuoto
 - `js/roadMesh.js`: soratien pinta
-- `js/themes.js`: ratojen teemat (taivas, valot, värit, maisema)
+- `js/themes.js`: ratojen teemat (tunnelma, värit, tienvarsi, maisema)
+- `js/atmosphere.js`: tunnelma-asetukset, taivaskupu ja pilvet, hehkuva utu
+- `js/postfx.js`: jälkikäsittely (bloom, värisävy, vinjetti, ACES)
+- `js/roadside.js`: tien reunan ruohotupsut, kanerva ja pikkukivet
 - `js/scenery.js`: metsäteeman puut ja kivet
 - `js/sceneryFinland.js`: hakkuuaukeat, pellot, paalit ja punaiset talot
 - `js/sceneryTuscany.js`: Italian maisema (pellot, viinitarhat, talot, torni, puut, kylä)
@@ -283,7 +323,7 @@ Paina pelissä **M** nähdäksesi kartan, jossa pisteiden numerot näkyvät.
 - `js/car.js`: auton malli, jousitus ja ajologiikka; autojen säädöt ovat `cars.js`:ssä
 - `js/dust.js`: pöly ja roiskeet renkaista; säädöt `DUST_CONFIG`-oliossa
 - `js/stage.js`: lähtö- ja maaliportit, ajanotto ja ennätys
-- `js/camera.js`: perässä seuraava kamera
+- `js/camera.js`: perässä seuraava kamera (vauhdin mukaan levenevä näkökenttä, tärinä)
 - `js/mapView.js`: karttanäkymä
 - `js/input.js`: näppäimistö
 - `js/noise.js`: kohinafunktiot

@@ -138,8 +138,8 @@ export class Car {
     const stripe = mat(M.stripe ?? '#f4f4f4', { roughness: 0.5 });
     const dark = mat('#26272b', { roughness: 0.9 });
     const glass = mat('#2c3e52', { roughness: 0.15, metalness: 0.3 });
-    const headlight = mat('#fff6d5', { emissive: '#fff1b8', emissiveIntensity: 0.6 });
-    const taillight = mat('#c0161d', { emissive: '#ff1a1a', emissiveIntensity: 0.5 });
+    const headlight = mat('#fff6d5', { emissive: '#fff1b8', emissiveIntensity: 0.8 });
+    const taillight = mat('#c0161d', { emissive: '#ff1010', emissiveIntensity: 3.2 });   // kirkas: hehkuu bloomissa
     const tire = mat('#222225', { roughness: 0.95 });
     const rim = mat('#c9ccd1', { roughness: 0.35, metalness: 0.5 });
 
