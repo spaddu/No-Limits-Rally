@@ -146,7 +146,7 @@ export function buildFinland({ scene, world, RAPIER, terrain, road, layout, rand
   // --- Hakkuuaukeat ----------------------------------------------------------------
   const stumps = new InstanceBatch(new THREE.CylinderGeometry(0.28, 0.34, 0.55, 7).translate(0, 0.27, 0), flatMaterial('#7a5b3c'));
   const slash = new InstanceBatch(new THREE.DodecahedronGeometry(0.5, 0), flatMaterial('#ffffff'), { castShadow: false });
-  const saplings = new InstanceBatch(new THREE.ConeGeometry(0.5, 1.6, 6).translate(0, 0.8, 0), flatMaterial('#ffffff'));
+  const saplings = new InstanceBatch(new THREE.ConeGeometry(0.5, 1.6, 6).translate(0, 0.8, 0), flatMaterial('#ffffff'), { tag: 'tree' });
   for (const zone of layout.clearcuts) {
     const n = Math.round(zone[2] * zone[2] * 0.012);
     for (let i = 0; i < n; i++) {

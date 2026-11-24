@@ -148,8 +148,8 @@ export function buildDesert({ scene, world, RAPIER, terrain, road, layout, rand,
   }
 
   // --- Palmut ----------------------------------------------------------------------
-  const trunk = new InstanceBatch(new THREE.CylinderGeometry(0.2, 0.3, 1, 6).translate(0, 0.5, 0), flatMaterial('#8a6a46'));
-  const fronds = new InstanceBatch(frondGeometry(), flatMaterial('#ffffff'));
+  const trunk = new InstanceBatch(new THREE.CylinderGeometry(0.2, 0.3, 1, 6).translate(0, 0.5, 0), flatMaterial('#8a6a46'), { tag: 'tree' });
+  const fronds = new InstanceBatch(frondGeometry(), flatMaterial('#ffffff'), { tag: 'tree' });
   const frondGreens = ['#4f8a39', '#5c9a40', '#457d32'].map((c) => new THREE.Color(c));
   const top = new THREE.Vector3();
   for (const o of layout.oases) {
@@ -335,8 +335,8 @@ function buildDelta({ scene, world, RAPIER, terrain, road, layout, rand, body, o
   }
 
   // Taatelipalmut peltojen laidoille ja tien varteen
-  const trunk = new InstanceBatch(new THREE.CylinderGeometry(0.2, 0.3, 1, 6).translate(0, 0.5, 0), flatMaterial('#8a6a46'));
-  const fronds = new InstanceBatch(frondGeometry(), flatMaterial('#ffffff'));
+  const trunk = new InstanceBatch(new THREE.CylinderGeometry(0.2, 0.3, 1, 6).translate(0, 0.5, 0), flatMaterial('#8a6a46'), { tag: 'tree' });
+  const fronds = new InstanceBatch(frondGeometry(), flatMaterial('#ffffff'), { tag: 'tree' });
   const greens = ['#4f8a39', '#5c9a40', '#457d32'].map((c) => new THREE.Color(c));
   const top = new THREE.Vector3();
   let palms = 0;

@@ -41,9 +41,9 @@ export function createScenery(scene, world, RAPIER, terrain, road, options = {},
   const trunkMat = new THREE.MeshStandardMaterial({ color: '#7a5233', flatShading: true, roughness: 1 });
   const leafMat = new THREE.MeshStandardMaterial({ color: '#ffffff', flatShading: true, roughness: 1 });
 
-  const trunks = new InstanceBatch(trunkGeo, trunkMat);
-  const leavesA = new InstanceBatch(leafGeoA, leafMat);
-  const leavesB = new InstanceBatch(leafGeoB, leafMat);
+  const trunks = new InstanceBatch(trunkGeo, trunkMat, { tag: 'tree' });
+  const leavesA = new InstanceBatch(leafGeoA, leafMat, { tag: 'tree' });
+  const leavesB = new InstanceBatch(leafGeoB, leafMat, { tag: 'tree' });
   const leafColors = ['#2f7d3b', '#3b8f45', '#2a6e3a', '#4a9a3f'].map((c) => new THREE.Color(c));
 
   let placed = 0;

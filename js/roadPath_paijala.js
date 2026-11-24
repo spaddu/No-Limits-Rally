@@ -12,7 +12,7 @@ export const ROAD = {
   startAt: 15,
   finishAt: -45,
 
-  width: 4,
+  width: 6,
   shoulder: 1.5,
   blend: 7,
   smoothing: 2.5,

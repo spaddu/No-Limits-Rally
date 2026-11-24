@@ -250,8 +250,24 @@ näkyviin osoitteella `?perf` (esim. `http://192.168.1.10:3000/?perf`).
 - Muisti: geometriat, tekstuurit, shaderit ja JS-keko (Chrome)
 - Pölyhiukkaset, fysiikan kappaleet ja törmäysmuodot, tarkkuus ja pikselisuhde
 
-Mittarien ollessa auki voi kokeilla, mikä maksaa: **1** jälkikäsittely päälle/pois,
-**2** bloom, **3** varjot, **4** tarkkuus (pikselisuhde 0,5 → 2).
+Paneelin alaosan valintaruuduilla (tai numeronäppäimillä mittarien ollessa auki) voi
+kokeilla, mikä maksaa: **1** jälkikäsittely, **2** bloom, **3** varjot, **4** tarkkuus
+(pikselisuhde 0,5 → 2), **5** kaikki puut, **6** törmäysmuodot maiseman päällä ja
+**7** vain törmäysmuodot. Valinnat säilyvät radan vaihtuessa.
+
+Liukusäätimillä voi kokeilla piirtoetäisyyttä (kameran kaukotaso) ja udun
+näkyvyyttä lennossa; paneeli näyttää, kuinka peittävää utu on piirtoalueen
+takareunassa (≥ 98 % piilottaa reunan). Pysyvästi nämä säädetään tunnelma-asetuksista:
+`fog.visibility` atmosphere.js:ssä (piirtoetäisyys on 1,25 × näkyvyys) tai radalle
+`env.fog` / `env.atmosphere` tracks.js:ssä.
+
+Puut (**5**) poistetaan radalta kokonaan: grafiikka (InstanceBatch, jolla on
+`tag: 'tree'`) ja runkojen törmäyssylinterit puiden kohdalta. Takaisin ne tulevat,
+kun täppä laitetaan päälle ja ajo käynnistetään valikosta (rata rakennetaan alusta).
+
+Törmäysmuodot (`js/colliderView.js`) piirretään Rapierin `debugRender`-viivoista:
+staattiset (vihreä: maaston kolmioverkko, puut, kivet, rakennukset) rakennetaan
+kerran, auton muodot (oranssi) ja renkaiden säteet (punainen) joka ruudussa.
 
 ## Suorituskyky
 
@@ -335,6 +351,7 @@ Paina pelissä **M** nähdäksesi kartan, jossa pisteiden numerot näkyvät.
 - `js/atmosphere.js`: tunnelma-asetukset, taivaskupu ja pilvet, hehkuva utu
 - `js/postfx.js`: jälkikäsittely (bloom, värisävy, vinjetti, ACES)
 - `js/perfHud.js`: suorituskykymittarit (E-näppäin tai `?perf`)
+- `js/colliderView.js`: törmäysmuotojen näyttö kehittäjän paneelista
 - `js/staticBatch.js`: staattisten kappaleiden yhdistäminen (vähemmän piirtokutsuja)
 - `js/roadside.js`: tien reunan ruohotupsut, kanerva ja pikkukivet
 - `js/scenery.js`: metsäteeman puut ja kivet

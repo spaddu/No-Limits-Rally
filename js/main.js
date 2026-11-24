@@ -98,7 +98,8 @@ function buildSession(trackIdx, carIdx) {
 const menu = new Menu({
   async onStart(trackIdx, carIdx) {
     const c = session?.choice;
-    if (!c || c.track !== trackIdx || c.car !== carIdx) {
+    // Rakennetaan alusta, jos rata tai auto vaihtui tai kehittäjän paneelin poistamat puut palautetaan
+    if (!c || c.track !== trackIdx || c.car !== carIdx || perf.needsRebuild(session)) {
       // Näytetään latausruutu ennen raskasta rakennusta
       const t = TRACKS[trackIdx];
       audio.setLoading(true);
@@ -180,6 +181,7 @@ renderer.setAnimationLoop((now) => {
   }
 
   speedEl.textContent = Math.round(Math.abs(session.car.speed) * 3.6);
+  perf.beforeRender(session);   // törmäysmuotojen viivat (jos näkyvissä)
   const renderStart = performance.now();
   session.render(postfx, dt);
   const renderEnd = performance.now();

@@ -1,8 +1,12 @@
 // Auton perässä pehmeästi seuraava kamera. Vauhdissa näkökenttä levenee (vauhdin tuntu)
 // ja soralla kamera tärisee hyvin hienovaraisesti.
 
-// Säädöt yhdessä paikassa
+// Säädöt yhdessä paikassa. Etäisyys, korkeus ja katsekorkeus ovat autokohtaisia
+// (cars.js: camera: { distance, height, lookHeight }, oletus 8.5 / 3.2 / 1.0).
 export const CAMERA_FX = {
+  follow: 7,           // kuinka nopeasti kamera hakeutuu paikalleen (isompi = jäykempi)
+  speedLag: 0.25,      // 0 = kamera pysyy vauhdissa samalla etäisyydellä, 1 = jää jälkeen
+                       //     (vanha käytös: noin nopeus / follow metriä, 30 m/s → +4 m)
   fovBoost: 11,        // astetta lisää huippunopeudessa
   fovFrom: 0.2,        // osuus huippunopeudesta, josta leveneminen alkaa
   shake: 0.0032,       // rad: tärinän voimakkuus täydessä vauhdissa soralla
@@ -12,7 +16,7 @@ export const CAMERA_FX = {
 import * as THREE from 'three';
 
 export class ChaseCamera {
-  constructor(camera, terrain, { distance = 8.5, height = 3.2, lookHeight = 1.0 } = {}) {
+  constructor(camera, terrain, { distance = 7.5, height = 3.2, lookHeight = 1.0 } = {}) {
     this.camera = camera;
     this.terrain = terrain;
     this.distance = distance;
@@ -22,6 +26,9 @@ export class ChaseCamera {
     this.desired = new THREE.Vector3();
     this.target = new THREE.Vector3();
     this.flatFwd = new THREE.Vector3();
+    this.offset = new THREE.Vector3();      // kamera suhteessa autoon (pehmennetty)
+    this.worldPos = new THREE.Vector3();    // maailmassa pehmennetty paikka (jää vauhdissa jälkeen)
+    this.tmp = new THREE.Vector3();
     this.baseFov = camera.fov;
     this.shakeTime = 0;
     this.shakeAmt = 0;
@@ -40,6 +47,8 @@ export class ChaseCamera {
     if (this.flatFwd.lengthSq() > 1e-4) this.dir.copy(this.flatFwd.normalize());
     this.computeDesired(carPos);
     this.camera.position.copy(this.desired);
+    this.worldPos.copy(this.desired);
+    this.offset.copy(this.desired).sub(carPos);
     this.camera.lookAt(this.target);
   }
 
@@ -59,7 +68,13 @@ export class ChaseCamera {
     }
 
     this.computeDesired(carPos);
-    this.camera.position.lerp(this.desired, 1 - Math.exp(-dt * 7));
+    if (this.offset.lengthSq() === 0) this.snap(carPos, carForward);   // ensimmäinen ruutu
+    // Kaksi pehmennystä: auton suhteen (ei jää vauhdissa jälkeen) ja maailmassa (jää);
+    // speedLag sekoittaa ne
+    const F = CAMERA_FX, k = 1 - Math.exp(-dt * F.follow);
+    this.offset.lerp(this.tmp.copy(this.desired).sub(carPos), k);
+    this.worldPos.lerp(this.desired, k);
+    this.camera.position.copy(carPos).add(this.offset).lerp(this.worldPos, F.speedLag);
 
     // Pidetään kamera maanpinnan yläpuolella
     const p = this.camera.position;

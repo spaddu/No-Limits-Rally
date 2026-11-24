@@ -25,19 +25,22 @@ export const INSTANCE_CELL = 160;
  * näkymän (ja varjokartan) ulkopuoliset ruudut jätetään piirtämättä.
  */
 export class InstanceBatch {
-  constructor(geometry, material, { castShadow = true, receiveShadow = true, cell = INSTANCE_CELL } = {}) {
+  constructor(geometry, material, { castShadow = true, receiveShadow = true, cell = INSTANCE_CELL, tag = null } = {}) {
     this.geometry = geometry;
     this.material = material;
     this.matrices = [];
     this.colors = [];
     this.castShadow = castShadow;
     this.receiveShadow = receiveShadow;
-    this.cell = cell;   // isompi ruutu = vähemmän piirtokutsuja, mutta huonompi rajaus
+    this.cell = cell;
+    this.tag = tag;     // esim. 'tree': kehittäjän paneeli voi piilottaa kaikki puut   // isompi ruutu = vähemmän piirtokutsuja, mutta huonompi rajaus
+    this.hasColor = false;
   }
 
   add(matrix, color = null) {
     this.matrices.push(matrix.clone());
     this.colors.push(color ? color.clone() : null);
+    if (color) this.hasColor = true;
   }
 
   build(scene) {
@@ -51,16 +54,19 @@ export class InstanceBatch {
       cells.get(key).push(i);
     }
     const white = new THREE.Color(1, 1, 1);
-    const hasColor = this.colors.some(Boolean);
+    //const hasColor = this.colors.some(Boolean);
     const group = new THREE.Group();
+    if (this.tag) group.userData.tag = this.tag;
     for (const list of cells.values()) {
       const mesh = new THREE.InstancedMesh(this.geometry, this.material, list.length);
       list.forEach((i, k) => {
         mesh.setMatrixAt(k, this.matrices[i]);
-        if (hasColor) mesh.setColorAt(k, this.colors[i] ?? white);
+        if (this.hasColor) mesh.setColorAt(k, this.colors[i] ?? white);
       });
-      mesh.castShadow = this.castShadow;
-      mesh.receiveShadow = this.receiveShadow;
+      //mesh.castShadow = this.castShadow;
+      //mesh.receiveShadow = this.receiveShadow;
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
       mesh.computeBoundingSphere();   // rajaus: ruudun kappaleiden yhteinen pallo
       group.add(mesh);
     }

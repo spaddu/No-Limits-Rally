@@ -75,6 +75,8 @@ export class RaceSession {
     // Udun takana ei näy mitään, joten näkymä rajataan sinne (utu ~99 %)
     this.camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, visibility * 1.25);
     this.sky = new Sky(scene, atmo, visibility * 1.15);
+    this.skyRadius = visibility * 1.15;
+    this.view = { far: this.camera.far, fog: visibility };   // kehittäjän paneeli voi säätää
     this.sunDir = this.sky.sunDir;
 
     // --- Fysiikka ja maailma -----------------------------------------------------
@@ -267,6 +269,23 @@ export class RaceSession {
     this.followSun();
   }
 
+  /**
+   * Piirtoetäisyys (kameran kaukotaso, m): taivaskupu pidetään sen sisäpuolella.
+   * Lyhyempi etäisyys = vähemmän piirrettävää, kun utu peittää reunan.
+   */
+  setDrawDistance(far) {
+    this.view.far = far;
+    this.camera.far = far;
+    this.camera.updateProjectionMatrix();
+    this.sky.mesh.scale.setScalar(Math.min(1, (far * 0.92) / this.skyRadius));
+  }
+
+  /** Udun näkyvyys (m): tätä kauempana kaikki on utua (~96 %). */
+  setFogVisibility(visibility) {
+    this.view.fog = visibility;
+    this.scene.fog.density = fogDensity(visibility);
+  }
+
   /** Kameran elävöitys: vauhti (näkökenttä) ja alustan karheus (tärinä soralla ja maastossa). */
   cameraMotion(car) {
     let contact = 0, offroad = 0;
@@ -304,7 +323,7 @@ export class RaceSession {
   /** Piirtää näkymän jälkikäsittelyn kautta (postfx.js). */
   render(postfx, dt) {
     const map = this.mapView.active;
-    this.sky.mesh.visible = !map;
+    this.sky.mesh.visible = !map && !this.sky.mesh.userData.forceHidden;   // forceHidden: vain törmäysmuodot -tila
     if (!map) this.sky.update(dt, this.camera);
     postfx.render(this.scene, map ? this.mapView.camera : this.camera, dt);
   }

@@ -316,8 +316,8 @@ export function buildTuscany({ scene, world, RAPIER, terrain, road, layout, rand
     cypressPts.push([x, z]);
     if (rand() < 0.5) cypressPts.push([x + 3 + rand() * 2, z + rand() * 3]);
   }
-  const cypress = new InstanceBatch(new THREE.IcosahedronGeometry(1, 0), flatMaterial('#ffffff'));
-  const cypressTrunk = new InstanceBatch(new THREE.CylinderGeometry(0.15, 0.2, 1.2, 5).translate(0, 0.6, 0), flatMaterial('#6a4e34'));
+  const cypress = new InstanceBatch(new THREE.IcosahedronGeometry(1, 0), flatMaterial('#ffffff'), { tag: 'tree' });
+  const cypressTrunk = new InstanceBatch(new THREE.CylinderGeometry(0.15, 0.2, 1.2, 5).translate(0, 0.6, 0), flatMaterial('#6a4e34'), { tag: 'tree' });
   const cypressGreens = ['#2f4d28', '#36552c', '#2a4524', '#3b5a2f'].map((c) => new THREE.Color(c));
   for (const [x, z] of cypressPts) {
     if (!free(x, z, 1)) continue;
@@ -334,8 +334,8 @@ export function buildTuscany({ scene, world, RAPIER, terrain, road, layout, rand
   cypressTrunk.build(scene);
 
   // --- Oliivilehdot ja pinjat ---------------------------------------------------
-  const oliveTrunk = new InstanceBatch(new THREE.CylinderGeometry(0.18, 0.3, 1.8, 5).translate(0, 0.9, 0), flatMaterial('#6e5c47'));
-  const oliveCrown = new InstanceBatch(new THREE.IcosahedronGeometry(1, 0), flatMaterial('#ffffff'));
+  const oliveTrunk = new InstanceBatch(new THREE.CylinderGeometry(0.18, 0.3, 1.8, 5).translate(0, 0.9, 0), flatMaterial('#6e5c47'), { tag: 'tree' });
+  const oliveCrown = new InstanceBatch(new THREE.IcosahedronGeometry(1, 0), flatMaterial('#ffffff'), { tag: 'tree' });
   const oliveGreens = ['#8f9d6b', '#9aa774', '#83925f'].map((c) => new THREE.Color(c));
   let groves = 0;
   for (let attempt = 0; attempt < 400 && groves < (options.groves ?? 5); attempt++) {
@@ -360,8 +360,8 @@ export function buildTuscany({ scene, world, RAPIER, terrain, road, layout, rand
   oliveTrunk.build(scene);
   oliveCrown.build(scene);
 
-  const pineTrunk = new InstanceBatch(new THREE.CylinderGeometry(0.22, 0.32, 1, 6).translate(0, 0.5, 0), flatMaterial('#6b4a33'));
-  const pineCrown = new InstanceBatch(new THREE.IcosahedronGeometry(1, 0), flatMaterial('#ffffff'));
+  const pineTrunk = new InstanceBatch(new THREE.CylinderGeometry(0.22, 0.32, 1, 6).translate(0, 0.5, 0), flatMaterial('#6b4a33'), { tag: 'tree' });
+  const pineCrown = new InstanceBatch(new THREE.IcosahedronGeometry(1, 0), flatMaterial('#ffffff'), { tag: 'tree' });
   for (let i = 0, n = 0; i < 600 && n < (options.pines ?? 28); i++) {
     const x = (rand() * 2 - 1) * limit, z = (rand() * 2 - 1) * limit;
     const rd = terrain.roadDistanceAt(x, z);

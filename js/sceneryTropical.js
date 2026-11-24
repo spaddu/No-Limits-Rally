@@ -172,9 +172,9 @@ export function buildTropical({ scene, world, RAPIER, terrain, road, layout, ran
   // --- Palmut: tiheimmin rannoilla ------------------------------------------------------------
   {
     const trunkGeo = new THREE.CylinderGeometry(0.15, 0.2, 1, 7).translate(0, 0.5, 0);
-    const trunks = new InstanceBatch(trunkGeo, flatMaterial('#8a7356'));
-    const fronds = new InstanceBatch(frondGeometry(), flatMaterial('#ffffff', { side: THREE.DoubleSide }));
-    const nuts = new InstanceBatch(new THREE.IcosahedronGeometry(0.16, 0), flatMaterial('#6b4f2c'));
+    const trunks = new InstanceBatch(trunkGeo, flatMaterial('#8a7356'), { tag: 'tree' });
+    const fronds = new InstanceBatch(frondGeometry(), flatMaterial('#ffffff', { side: THREE.DoubleSide }), { tag: 'tree' });
+    const nuts = new InstanceBatch(new THREE.IcosahedronGeometry(0.16, 0), flatMaterial('#6b4f2c'), { tag: 'tree' });
     const greens = ['#4e9a3a', '#5fae45', '#3f8a35', '#6cb84c'].map((c) => new THREE.Color(c));
     const n = options.palms ?? 500;
     for (let attempt = 0, placed = 0; attempt < n * 30 && placed < n; attempt++) {
@@ -219,8 +219,8 @@ export function buildTropical({ scene, world, RAPIER, terrain, road, layout, ran
   // --- Viidakko: lehtipuut, pensaat ja saniaiset -------------------------------------------
   const jungle = options.jungle ?? 0;
   {
-    const trunk = new InstanceBatch(new THREE.CylinderGeometry(0.22, 0.35, 1, 6).translate(0, 0.5, 0), flatMaterial('#6f6252'));
-    const crown = new InstanceBatch(new THREE.IcosahedronGeometry(1, 0), flatMaterial('#ffffff'));
+    const trunk = new InstanceBatch(new THREE.CylinderGeometry(0.22, 0.35, 1, 6).translate(0, 0.5, 0), flatMaterial('#6f6252'), { tag: 'tree' });
+    const crown = new InstanceBatch(new THREE.IcosahedronGeometry(1, 0), flatMaterial('#ffffff'), { tag: 'tree' });
     const bush = new InstanceBatch(new THREE.IcosahedronGeometry(1, 0), flatMaterial('#ffffff'));
     const fern = new InstanceBatch(frondGeometry(), flatMaterial('#ffffff', { side: THREE.DoubleSide }));
     const leaf = ['#2f6b2c', '#3d7f34', '#4f9440', '#2a5e2a', '#5a9a3c'].map((c) => new THREE.Color(c));

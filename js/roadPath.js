@@ -24,7 +24,7 @@ export const ROAD = {
   startAt: 15,       // lähtöviiva (m tien alusta)
   finishAt: -50,     // maaliviiva (m tien lopusta, negatiivinen)
 
-  width: 4,          // tien leveys (m)
+  width: 6,          // tien leveys (m)
   shoulder: 1.5,     // tasainen piennar tien molemmin puolin (m)
   blend: 7,          // luiskan leveys, jolla tie liittyy maastoon (m)
   smoothing: 3,      // pituuskaltevuuden tasoitus (m): suurempi = tasaisempi tie

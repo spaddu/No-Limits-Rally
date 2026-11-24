@@ -200,9 +200,9 @@ export function buildArizona({ scene, world, RAPIER, terrain, road, layout, rand
 
   // --- Männyt metsävyöhykkeelle -------------------------------------------------------------
   if (options.forest) {
-    const trunk = new InstanceBatch(new THREE.CylinderGeometry(0.16, 0.26, 1, 6).translate(0, 0.5, 0), flatMaterial('#6e4630'));
-    const crownA = new InstanceBatch(new THREE.ConeGeometry(1.7, 3.6, 7).translate(0, 1.8, 0), flatMaterial('#ffffff'));
-    const crownB = new InstanceBatch(new THREE.ConeGeometry(1.2, 2.8, 7).translate(0, 1.4, 0), flatMaterial('#ffffff'));
+    const trunk = new InstanceBatch(new THREE.CylinderGeometry(0.16, 0.26, 1, 6).translate(0, 0.5, 0), flatMaterial('#6e4630'), { tag: 'tree' });
+    const crownA = new InstanceBatch(new THREE.ConeGeometry(1.7, 3.6, 7).translate(0, 1.8, 0), flatMaterial('#ffffff'), { tag: 'tree' });
+    const crownB = new InstanceBatch(new THREE.ConeGeometry(1.2, 2.8, 7).translate(0, 1.4, 0), flatMaterial('#ffffff'), { tag: 'tree' });
     const greens = ['#3f5f2e', '#4a6b33', '#365428', '#527338'].map((c) => new THREE.Color(c));
     const nPines = options.pines ?? 1800;
     for (let attempt = 0, placed = 0; attempt < nPines * 12 && placed < nPines; attempt++) {

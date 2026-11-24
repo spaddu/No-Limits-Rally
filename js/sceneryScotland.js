@@ -376,9 +376,9 @@ export function buildScotland({ scene, world, RAPIER, terrain, road, layout, ran
 
   // --- Puut: vaivaiskoivut, isot koivut ja kotimännyt ------------------------------------
   {
-    const trunk = new InstanceBatch(new THREE.CylinderGeometry(0.07, 0.13, 1, 5).translate(0, 0.5, 0), flatMaterial('#d6d1c4'));
-    const pineTrunk = new InstanceBatch(new THREE.CylinderGeometry(0.16, 0.3, 1, 6).translate(0, 0.5, 0), flatMaterial('#8a5a3c'));
-    const crown = new InstanceBatch(new THREE.IcosahedronGeometry(1, 0), flatMaterial('#ffffff'));
+    const trunk = new InstanceBatch(new THREE.CylinderGeometry(0.07, 0.13, 1, 5).translate(0, 0.5, 0), flatMaterial('#d6d1c4'), { tag: 'tree' });
+    const pineTrunk = new InstanceBatch(new THREE.CylinderGeometry(0.16, 0.3, 1, 6).translate(0, 0.5, 0), flatMaterial('#8a5a3c'), { tag: 'tree' });
+    const crown = new InstanceBatch(new THREE.IcosahedronGeometry(1, 0), flatMaterial('#ffffff'), { tag: 'tree' });
     const leaf = ['#7f9a45', '#93ad55', '#6f8a3a', '#a7a84e', '#86a04a'].map((c) => new THREE.Color(c));
     const pineLeaf = ['#2f4a2a', '#3a5a32', '#2a4426', '#40603a'].map((c) => new THREE.Color(c));
     const clump = createNoise2D(7373);
