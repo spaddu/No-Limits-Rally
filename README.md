@@ -187,14 +187,7 @@ Radat on lueteltu tiedostossa `js/tracks.js` (reitti, maasto, teema) ja autot
 tiedostossa `js/cars.js` (vetotapa, teho, pito, massa ja ulkonäkö). Jokaisella autolla
 on oma täydellinen ajosäätö `config`-kohdassa.
 
-Autot: FWD Hatchback, Retro RWD, WRC AWD ja **Rally Raid Truck** (4×4-kuorma-auto
-Dakar-tyyliin). Kuorma-auto on raskas (2 400 kg) ja pitkä: se kiihtyy ja kääntyy
-hitaammin, mutta isot nappularenkaat pitävät hyvin myös tien ulkopuolella, ja se
-kahlaa syvemmässä vedessä (`wadeDepth`). Pysähtyessä paineilmajarrut pitävät sen paikallaan
-(`holdSpeed`). Kamera on kauempana (`camera` cars.js:ssä). Ääni on matalakierroksinen
-V8-diesel: iso turbo, dieselin nakutus, moottorijarrun rätinä kaasun noustessa ja
-paineilmajarrujen sihahdus pysähtyessä (`sound`: `diesel`, `jake`, `airBrake`,
-`turboPitch`, `inertia`).
+Autot: FWD Hatchback, Retro RWD ja WRC AWD.
 
 Teemat (`js/themes.js`) määräävät tunnelman (`atmosphere`), maaston värit, tien
 pinnan, pölyn värit, tienvarren pikkuyksityiskohdat (`roadside`) ja maisemaelementit.
@@ -355,7 +348,6 @@ Paina pelissä **M** nähdäksesi kartan, jossa pisteiden numerot näkyvät.
 - `js/modelHatch.js`: FWD Hatchbackin 3D-malli (kolmiovinen hot hatch, vain ulkonäkö)
 - `js/modelRetro.js`: Retro RWD:n 3D-malli (70-luvun kaksiovinen ralli-sedan teippauksineen)
 - `js/modelWrc.js`: WRC AWD:n 3D-malli (Rally1-tyylinen kilpa-auto isolla siivellä)
-- `js/modelTruck.js`: Rally Raid Truckin 3D-malli (ohjaamo, huoltolaatikko, nappularenkaat, varapyörä)
 - `js/audio.js`: syntetisoidut äänet (moottori, alusta, törmäykset)
 - `js/music.js`: valikkomusiikki (syntetisoitu retrokappale)
 - `js/sceneryScotland.js`: Skotlannin nummet, kiviaidat, mökit, kylä ja linnan rauniot sekä

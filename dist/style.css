@@ -493,10 +493,6 @@ body.menu-open #message {
   gap: 14px;
 }
 
-/* Neljä autoa rinnakkain */
-.car-cards {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
 
 /* Kapeissa autokorteissa "Stages with a time" pysyy yhdellä rivillä */
 .car-cards .card-meta .surface {
@@ -509,9 +505,6 @@ body.menu-open #message {
 @media (max-width: 760px) and (min-height: 521px) {
   .cards {
     grid-template-columns: 1fr;
-  }
-  .car-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

@@ -8,7 +8,6 @@ import { mergeStatic } from './staticBatch.js';
 import { buildHatchBody, addHatchRim } from './modelHatch.js';
 import { buildRetroBody, addRetroRim } from './modelRetro.js';
 import { buildWrcBody, addWrcRim } from './modelWrc.js';
-import { buildTruckBody, addTruckRim, truckTireGeometry } from './modelTruck.js';
 
 /** N: tätä pienemmistä kosketusvoimista ei tule törmäystapahtumaa (ääntä). */
 export const IMPACT_THRESHOLD = 9000;
@@ -51,7 +50,7 @@ const SLIDE_DEFAULTS = {
   slipFull: 0.42,       // rad (~24°): tästä eteenpäin pito on slideGrip
   slideGrip: 0.55,      // eturenkaiden sivukitkan jäykkyys täydessä luisussa (1 = normaali)
   slideGripRear: 0.8,   // takarenkaiden sama (suurempi = vakaampi, pienempi = herkemmin sivuttain)
-  yawTolerance: 0.45,   // rad/s: näin paljon ylimääräistä kiertymistä sallitaan (luisutteluvara)
+  yawTolerance: 0.55,   // rad/s: näin paljon ylimääräistä kiertymistä sallitaan (luisutteluvara)
   yawDamping: 8,        // 1/s: kuinka voimakkaasti ylimenevä kiertyminen vaimennetaan
   gripRecovery: 1.0,    // 1/s: kuinka nopeasti pito palautuu luisun jälkeen (pienempi = pehmeämpi)
   slideAlign: 0.4,      // rad/s: kuinka nopeasti nopeusvektori kääntyy kohti keulaa luisussa
@@ -200,9 +199,6 @@ export class Car {
     } else if (M.style === 'wrc') {
       // Rally1-tyylinen kilpa-auto (js/modelWrc.js)
       buildWrcBody({ add, paint, dark, glass, headlight, taillight }, C, M);
-    } else if (M.style === 'truck') {
-      // Ralliraidikuorma-auto (js/modelTruck.js)
-      buildTruckBody({ add, paint, dark, glass, headlight, taillight }, C, M);
     } else {
       const h = C.chassisHalf;
       // Kori
@@ -262,8 +258,7 @@ export class Car {
     }
 
     // Renkaat: pivot (jousitus + ohjaus) -> spin (pyöriminen) -> meshit
-    const tireGeo = M.style === 'truck' ? truckTireGeometry(C)
-      : new THREE.CylinderGeometry(C.wheelRadius, C.wheelRadius, C.wheelWidth, 14).rotateX(Math.PI / 2);
+    const tireGeo = new THREE.CylinderGeometry(C.wheelRadius, C.wheelRadius, C.wheelWidth, 14).rotateX(Math.PI / 2);
     const rimGeo = new THREE.CylinderGeometry(C.wheelRadius * 0.55, C.wheelRadius * 0.55, C.wheelWidth + 0.02, 6).rotateX(Math.PI / 2);
     this.wheels = WHEELS.map(() => {
       const pivot = new THREE.Group();
@@ -276,7 +271,6 @@ export class Car {
       if (M.style === 'hatch') addHatchRim(spin, C, rim, dark);
       else if (M.style === 'retro') addRetroRim(spin, C, rim, dark);
       else if (M.style === 'wrc') addWrcRim(spin, C, dark);
-      else if (M.style === 'truck') addTruckRim(spin, C, dark);
       else spin.add(rm);
       pivot.add(spin);
       group.add(pivot);

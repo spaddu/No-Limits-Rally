@@ -10,7 +10,7 @@ import { routeKey, loadBest, formatTime } from './stage.js';
 import { renderCarThumbnails } from './carPreview.js';
 
 const SAVE_KEY = 'autopeli-valinta';
-const DRIVE_SHORT = { 'Front-wheel drive': 'FWD', 'Rear-wheel drive': 'RWD', 'All-wheel drive': 'AWD', 'Four-wheel drive': '4×4' };
+const DRIVE_SHORT = { 'Front-wheel drive': 'FWD', 'Rear-wheel drive': 'RWD', 'All-wheel drive': 'AWD' };
 const STAT_NAMES = { power: 'Power', grip: 'Grip', agility: 'Agility' };
 // Teeman mukainen alusta korttien alalaitaan
 const SURFACE = {
