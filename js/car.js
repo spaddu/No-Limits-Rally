@@ -30,11 +30,45 @@ export function buildCarModel(carDef) {
   return { group, wheels: target.wheels };
 }
 
+// --- Sivuluisun apu ------------------------------------------------------------
+// Rapierin (Bulletin) rengasmalli on lähes kaksitilainen: rengas pitää täysin, kunnes
+// raja ylittyy, ja kun luisu hidastuu rajan alle, pito palaa kerralla (nykäys). Lisäksi
+// sivukitka syö luisussa nopeutta. Apu tekee luisusta hallittavan:
+//   1. Pito riippuu renkaan luistokulmasta pehmeästi (sivukitkan jäykkyys 1 → slideGrip),
+//      ja se palautuu luisun jälkeen sulavasti (gripRecovery) eikä hetkessä.
+//   2. Nopeuden suuntaus: luisussa nopeusvektori kääntyy kohti auton keulaa (slideAlign)
+//      lähes nopeutta menettämättä, jolloin luisusta ajetaan ulos eikä pysähdytä.
+//   3. Pyörähdyssuoja: jos auto kiertyy nopeammin kuin ohjaus ja vauhti selittävät
+//      (yli yawTolerance), ylimenevää kiertymistä vaimennetaan (yawDamping). Estää sekä
+//      pyörähtämisen luisun alussa että vastaohjauksen heilautuksen toiseen suuntaan.
+//      Takarenkaiden pito heikkenee luisussa vähemmän (slideGripRear), koska takapään
+//      pidon menetys ruokkii pyörähdystä.
+// Arvot ovat autokohtaisia (cars.js: config), oletukset alla. Kehittäjän paneelista apu
+// saa pois päältä vertailua varten (SLIDE_ASSIST.enabled).
+export const SLIDE_ASSIST = { enabled: true, stability: true };
+const SLIDE_DEFAULTS = {
+  slipStart: 0.1,       // rad (~6°): tähän asti rengas pitää täysin
+  slipFull: 0.42,       // rad (~24°): tästä eteenpäin pito on slideGrip
+  slideGrip: 0.55,      // eturenkaiden sivukitkan jäykkyys täydessä luisussa (1 = normaali)
+  slideGripRear: 0.8,   // takarenkaiden sama (suurempi = vakaampi, pienempi = herkemmin sivuttain)
+  yawTolerance: 0.45,   // rad/s: näin paljon ylimääräistä kiertymistä sallitaan (luisutteluvara)
+  yawDamping: 8,        // 1/s: kuinka voimakkaasti ylimenevä kiertyminen vaimennetaan
+  gripRecovery: 1.0,    // 1/s: kuinka nopeasti pito palautuu luisun jälkeen (pienempi = pehmeämpi)
+  slideAlign: 0.4,      // rad/s: kuinka nopeasti nopeusvektori kääntyy kohti keulaa luisussa
+  slideAlignThrottle: 0.5, // kaasu lisää suuntausta tällä osuudella (rallityyli: kaasulla ulos)
+  slideSpeedKeep: 0.985, // osuus nopeudesta, joka säilyy suuntauksessa (per käännetty radiaani)
+};
+
 const _q = new THREE.Quaternion();
 const _v = new THREE.Vector3();
 const _up = new THREE.Vector3();
 const _av = new THREE.Vector3();
 const _axis = new THREE.Vector3();
+const _right = new THREE.Vector3();
+// Auton yläsuunta kvaternionista ilman väliaikaisia olioita
+const up_x = (q) => 2 * (q.x * q.y - q.w * q.z);
+const up_y = (q) => 1 - 2 * (q.x * q.x + q.z * q.z);
+const up_z = (q) => 2 * (q.y * q.z + q.w * q.x);
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 
 export class Car {
@@ -45,6 +79,8 @@ export class Car {
     const C = this.config;
     this.world = world;
     this.steer = 0;
+    this.sideGrip = [1, 1, 1, 1];   // sivukitkan jäykkyys renkaittain (luisun apu)
+    this.slipAngle = 0;            // auton luistokulma (rad), efekteille ja mittareille
     this.speed = 0;
     this.anyWheelContact = true;
     this.isOnRoad = null;              // funktio (x, z) => boolean, asetetaan main.js:ssä
@@ -292,7 +328,34 @@ export class Car {
     const digital = (input.left ? 1 : 0) - (input.right ? 1 : 0);
     const steerInput = digital !== 0 || input.steer == null ? digital : input.steer;
     const maxSteer = Math.max(C.maxSteer / (1 + Math.abs(speed) / C.steerFalloff), C.minSteer);
+
+    // Luistokulma: auton nopeuden suunta suhteessa keulaan (vain eteenpäin ajaessa)
+    const S = SLIDE_ASSIST.enabled ? { ...SLIDE_DEFAULTS, ...C.slide } : null;
+    const right = _right.set(0, 0, 1).applyQuaternion(_q);
+    const vLat = lv.x * right.x + lv.y * right.y + lv.z * right.z;
+    const sliding = speed > 3;
+    this.slipAngle = sliding ? Math.atan2(vLat, speed) : 0;
+
     this.steer += (steerInput * maxSteer - this.steer) * Math.min(1, dt * C.steerSpeed);
+
+    // 1. Pito renkaan luistokulman mukaan (pehmeä raja ja hidas palautuminen)
+    if (S) {
+      const av = this.body.angvel();
+      const up = _up.set(0, 1, 0).applyQuaternion(_q);
+      const yaw = av.x * up.x + av.y * up.y + av.z * up.z;
+      const vLong = Math.max(Math.abs(speed), 2);
+      for (let i = 0; i < 4; i++) {
+        const front = WHEELS[i].front;
+        // Renkaan sivunopeus: auton sivuliike + kiertymisestä tuleva osuus
+        const lat = front ? vLat - yaw * C.wheelX : vLat + yaw * C.wheelX;
+        const alpha = Math.abs(Math.atan2(lat, vLong) + (front ? this.steer : 0));
+        const t = THREE.MathUtils.smoothstep(alpha, S.slipStart, S.slipFull);
+        const minGrip = front ? S.slideGrip : S.slideGripRear;
+        const target = Math.abs(speed) > 3 ? 1 - (1 - minGrip) * t : 1;
+        const rate = target < this.sideGrip[i] ? 12 : S.gripRecovery;
+        this.sideGrip[i] += (target - this.sideGrip[i]) * Math.min(1, dt * rate);
+      }
+    }
 
     // --- Alusta: onko kukin rengas tiellä vai maastossa ---------------------
     let offroadWheels = 0;
@@ -331,10 +394,61 @@ export class Car {
       v.setWheelEngineForce(i, -e);
       v.setWheelBrake(i, b);
       v.setWheelFrictionSlip(i, slip);
+      v.setWheelSideFrictionStiffness(i, S ? this.sideGrip[i] : 1);
       v.setWheelSteering(i, front ? this.steer : 0);
     }
 
     v.updateVehicle(dt);
+
+    // 3. Pyörähdyssuoja: verrataan kiertymisnopeutta siihen, mitä ohjaus ja vauhti selittävät
+    //    (polkupyörämalli: yaw = v · tan(ohjaus) / akseliväli) ja vaimennetaan ylimenevä osa
+    if (S && SLIDE_ASSIST.stability && speed > 5) {
+      let contactCount = 0;
+      for (let i = 0; i < 4; i++) if (v.wheelIsInContact(i)) contactCount++;
+      if (contactCount >= 3) {
+        const av = this.body.angvel();
+        const ux = up_x(_q), uy = up_y(_q), uz = up_z(_q);
+        const yaw = av.x * ux + av.y * uy + av.z * uz;
+        // Ohjauksen tavoittelema kiertyminen, rajattuna sille, mihin renkaiden pito riittää
+        // (sivukiihtyvyys ≈ kitka × g → kiertyminen ≤ a / v)
+        const lim = (Math.max(C.frictionFront, C.frictionRear) * 9.81 * 1.15) / speed;
+        const intended = THREE.MathUtils.clamp((speed * Math.tan(this.steer)) / (2 * C.wheelX), -lim, lim);
+        // Apu vain hillitsee kiertymistä, ei koskaan lisää sitä:
+        //  - samaan suuntaan kuin ohjaus: vaimennetaan tavoitteen + toleranssin ylittävä osa
+        //  - vastakkaiseen suuntaan (auto kiertyy vaikka ohjataan toiseen suuntaan): ylittävä osa
+        const allowed = yaw * intended > 0 ? Math.abs(intended) + S.yawTolerance : S.yawTolerance;
+        const over = Math.abs(yaw) - allowed;
+        if (over > 0) {
+          const inertiaY = (C.inertia ?? { y: 1350 }).y;
+          const k = -Math.sign(yaw) * over * inertiaY * Math.min(1, S.yawDamping * dt);
+          this.body.applyTorqueImpulse({ x: ux * k, y: uy * k, z: uz * k }, true);
+        }
+      }
+    }
+
+    // 2. Luisussa nopeusvektori kääntyy kohti keulaa lähes nopeutta menettämättä
+    if (S && sliding && Math.abs(this.slipAngle) > 0.03) {
+      let contactCount = 0;
+      for (let i = 0; i < 4; i++) if (v.wheelIsInContact(i)) contactCount++;
+      if (contactCount >= 3) {
+        const nv = this.body.linvel();
+        const throttle = Math.max(0, this.throttle);
+        const turn = Math.min(Math.abs(this.slipAngle), S.slideAlign * (1 + S.slideAlignThrottle * throttle) * dt)
+          * Math.sign(this.slipAngle);
+        // Käännetään vaakanopeutta pystyakselin ympäri kohti keulaa
+        const c = Math.cos(turn), sn = Math.sin(turn);
+        const keep = 1 - (1 - S.slideSpeedKeep) * Math.abs(turn);
+        const ax = up_x(_q), ay = up_y(_q), az = up_z(_q);
+        // Rodriguesin kaava: v' = v cosθ + (k × v) sinθ + k (k·v)(1 − cosθ)
+        const kv = ax * nv.x + ay * nv.y + az * nv.z;
+        const cx = ay * nv.z - az * nv.y, cy = az * nv.x - ax * nv.z, cz = ax * nv.y - ay * nv.x;
+        const rx = (nv.x * c + cx * sn + ax * kv * (1 - c)) * keep;
+        const ry = (nv.y * c + cy * sn + ay * kv * (1 - c)) * keep;
+        const rz = (nv.z * c + cz * sn + az * kv * (1 - c)) * keep;
+        const m = this.body.mass();
+        this.body.applyImpulse({ x: (rx - nv.x) * m, y: (ry - nv.y) * m, z: (rz - nv.z) * m }, true);
+      }
+    }
 
     // Maastossa vierintävastus hidastaa vaakasuuntaista liikettä
     if (this.offroad > 0) {

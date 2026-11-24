@@ -9,6 +9,7 @@ import { TRACKS } from './tracks.js';
 import { CARS } from './cars.js';
 import { PostFX } from './postfx.js';
 import { PerfHud } from './perfHud.js';
+import { SLIDE_ASSIST } from './car.js';
 
 const speedEl = document.getElementById('speed-value');
 
@@ -201,7 +202,7 @@ addEventListener('resize', () => {
 
 // Kehitystä ja testausta varten selaimen konsolista: window.game
 window.game = {
-  THREE, RAPIER, renderer, postfx, perf, input, menu, touch, audio,
+  THREE, RAPIER, renderer, postfx, perf, slideAssist: SLIDE_ASSIST, input, menu, touch, audio,
   get session() { return session; },
   get car() { return session.car; },
   get road() { return session.road; },

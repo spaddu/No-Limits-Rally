@@ -199,6 +199,29 @@ paineilmajarrujen sihahdus pysähtyessä (`sound`: `diesel`, `jake`, `airBrake`,
 Teemat (`js/themes.js`) määräävät tunnelman (`atmosphere`), maaston värit, tien
 pinnan, pölyn värit, tienvarren pikkuyksityiskohdat (`roadside`) ja maisemaelementit.
 
+## Sivuluisun apu
+
+Rapierin raycast-ajoneuvon rengasmalli on lähes kaksitilainen: rengas pitää täysin, kunnes
+raja ylittyy, ja kun luisu hidastuu, pito palaa kerralla (nykäys). Sivukitka myös syö
+luisussa nopeutta. `js/car.js` (`SLIDE_DEFAULTS`) pehmentää tätä:
+
+1. **Pehmeä pito**: sivukitkan jäykkyys riippuu renkaan luistokulmasta (täysi pito
+   `slipStart`-kulmaan asti, `slideGrip` kulmasta `slipFull` alkaen) ja palautuu luisun
+   jälkeen sulavasti (`gripRecovery`).
+2. **Nopeuden suuntaus**: luisussa nopeusvektori kääntyy kohti keulaa (`slideAlign`
+   rad/s, kaasulla enemmän `slideAlignThrottle`) lähes nopeutta menettämättä
+   (`slideSpeedKeep`), joten luisusta ajetaan ulos eikä auto pysähdy.
+3. **Pyörähdyssuoja**: jos auto kiertyy nopeammin kuin ohjaus ja vauhti selittävät
+   (polkupyörämalli, rajattuna renkaiden pitoon) yli `yawTolerance`-varan, ylimenevää
+   kiertymistä vaimennetaan (`yawDamping`). Suoja vain hillitsee kiertymistä, ei koskaan
+   lisää sitä. Takarenkaiden pito heikkenee luisussa vähemmän (`slideGripRear`), koska
+   takapään pidon menetys ruokkii pyörähdystä.
+
+Arvoja voi muuttaa autokohtaisesti: `config.slide = { slideGrip: 0.6, … }` cars.js:ssä.
+Kehittäjän paneelissa (E) **Slide assist** (8) kytkee avun pois ja **Spin guard** (9)
+pelkän pyörähdyssuojan vertailua varten, ja
+paneeli näyttää luistokulman ja renkaiden sivupidon.
+
 ## Tunnelma ja grafiikka
 
 Kaikki on proseduraalista (ei kuvia eikä ladattavia malleja).
@@ -235,6 +258,9 @@ Kaikki on proseduraalista (ei kuvia eikä ladattavia malleja).
   pehmeästi (oma läpinäkyvyys per hiukkanen); värit tienpinnan mukaan teemoittain.
 - **Kamera** (`js/camera.js`, `CAMERA_FX`): näkökenttä levenee vauhdissa (+11°
   huippunopeudessa) ja soralla kamera tärisee hienovaraisesti (maastossa enemmän).
+  `speedLag` säätää, kuinka paljon kamera jää vauhdissa jälkeen (0 = ei lainkaan,
+  1 = noin nopeus / `follow` metriä), `follow` kameran jäykkyyttä. Etäisyys, korkeus
+  ja katsekorkeus ovat autokohtaisia (`camera` cars.js:ssä).
 
 ## Suorituskykymittarit (kehitykseen)
 

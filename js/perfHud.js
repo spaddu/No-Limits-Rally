@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { ColliderView } from './colliderView.js';
 import { fogDensity } from './atmosphere.js';
+import { SLIDE_ASSIST } from './car.js';
 
 // Kehittäjän suorituskykymittarit (E-näppäin tai osoite ?perf). Näyttää oikeassa
 // yläkulmassa ruudunpäivityksen (FPS ja käyrä), aikajaon (fysiikka, päivitys, piirto,
@@ -9,6 +10,7 @@ import { fogDensity } from './atmosphere.js';
 // Paneelin valintaruuduilla (tai numeronäppäimillä) voi kokeilla, mikä maksaa:
 //   1 = jälkikäsittely   2 = bloom   3 = varjot   4 = tarkkuus (pikselisuhde)   5 = puut
 //   6 = törmäysmuodot maiseman päällä   7 = vain törmäysmuodot (colliderView.js)
+//   8 = sivuluisun apu (car.js, SLIDE_ASSIST) vertailua varten   9 = pyörähdyssuoja
 // Puut poistetaan radalta kokonaan (grafiikka ja törmäysmuodot); takaisin ne tulevat, kun
 // ajo käynnistetään valikosta uudelleen.
 
@@ -94,6 +96,8 @@ export class PerfHud {
     check('trees', 'Trees', '5', (v) => this.setTrees(v));
     check('colliders', 'Colliders', '6', (v) => this.setColliders(v ? 'overlay' : 'off'));
     check('collidersOnly', 'Colliders only', '7', (v) => this.setColliders(v ? 'only' : 'off'));
+    check('slide', 'Slide assist', '8', (v) => { SLIDE_ASSIST.enabled = v; this.syncControls(); });
+    check('spin', 'Spin guard', '9', (v) => { SLIDE_ASSIST.stability = v; this.syncControls(); });
     const row = document.createElement('label');
     const select = document.createElement('select');
     for (const pr of PIXEL_RATIOS) select.add(new Option(`${pr}x`, String(pr)));
@@ -238,6 +242,9 @@ export class PerfHud {
     i.trees.parentElement.title = this.session?.treesRemoved && this.trees ? 'Trees return when the stage is restarted from the menu' : '';
     i.colliders.checked = this.colliderMode === 'overlay';
     i.collidersOnly.checked = this.colliderMode === 'only';
+    i.slide.checked = SLIDE_ASSIST.enabled;
+    i.spin.checked = SLIDE_ASSIST.stability;
+    i.spin.disabled = !SLIDE_ASSIST.enabled;
     const view = this.session?.view;
     if (view) {
       i.far.value = view.far;
@@ -267,6 +274,8 @@ export class PerfHud {
     else if (code === 'Digit3') this.setShadows(!this.shadows);
     else if (code === 'Digit5') this.setTrees(!this.trees);
     else if (code === 'Digit6') this.setColliders(this.colliderMode === 'overlay' ? 'off' : 'overlay');
+    else if (code === 'Digit8') { SLIDE_ASSIST.enabled = !SLIDE_ASSIST.enabled; this.syncControls(); }
+    else if (code === 'Digit9') { SLIDE_ASSIST.stability = !SLIDE_ASSIST.stability; this.syncControls(); }
     else if (code === 'Digit7') this.setColliders(this.colliderMode === 'only' ? 'off' : 'only');
     else if (code === 'Digit4') {
       const pr = this.renderer.getPixelRatio();
@@ -389,6 +398,7 @@ export class PerfHud {
       lines.push(
         ``,
         `Dust ${session.dust.dust.count}  debris ${session.dust.debris.count}`,
+        `Slip ${(session.car.slipAngle * 57.3).toFixed(0).padStart(4)}°  side grip ${session.car.sideGrip.map((g) => g.toFixed(2)).join(' ')}`,
         `Physics ${session.world.bodies.len()} bodies  ${session.world.colliders.len()} colliders`,
         ...(session.treesRemoved ? [`Trees removed: ${session.treesRemoved.meshes} meshes, ${session.treesRemoved.colliders} colliders${this.trees ? ' (back after restart)' : ''}`] : []),
         ...(this.colliderView ? [`Collider lines ${this.colliderView.staticSegments} (built ${this.colliderView.buildMs.toFixed(0)} ms)`] : []),

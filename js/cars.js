@@ -158,8 +158,8 @@ export const CARS = [
         suspensionRelaxation: 3.6,    // vaimennus palautuessa
         maxSuspensionForce: 100000,
 
-        frictionFront: 1.1,
-        frictionRear: 0.95,
+        frictionFront: 1.05,
+        frictionRear: 1.00,
         frictionHandbrake: 0.4,
 
         driveFront: 0.4,              // vetävien renkaiden jako: 1 = etuveto, 0 = takaveto
@@ -174,10 +174,10 @@ export const CARS = [
         holdBrake: 40,                // pitää auton paikallaan rinteessä
         handbrake: 60,
 
-        maxSteer: 1.2,               // rad paikallaan
+        maxSteer: 0.6,               // rad paikallaan
         minSteer: 0.1,                // rad vähintään
         steerFalloff: 20,             // m/s; kääntökulma puolittuu tällä nopeudella
-        steerSpeed: 11,
+        steerSpeed: 10,
 
         airLevel: 4000,               // Nm, ilmassa auto oikaisee itseään
         airLevelDamping: 1200,
